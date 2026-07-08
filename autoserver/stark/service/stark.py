@@ -654,9 +654,31 @@ class AdminSite(object):
         obj = ModelConfigMapping(model_class, stark_config(model_class, self, prev), prev)
         self._registry.append(obj)
 
+    def index(self, request):
+        """Stark 总览页：列出所有已注册模型及其 CRUD 链接"""
+        groups = {}
+        for item in self._registry:
+            app_label = item.model._meta.app_label
+            model_name = item.model._meta.model_name
+            verbose = item.model._meta.verbose_name
+
+            url_prefix = item.prev and '%s/%s/%s' % (app_label, model_name, item.prev) \
+                         or '%s/%s' % (app_label, model_name)
+
+            entry = {
+                'verbose': str(verbose),
+                'model_name': model_name,
+                'app_label': app_label,
+                'list_url': '/stark/%s/list/' % url_prefix,
+                'add_url': '/stark/%s/add/' % url_prefix,
+            }
+            groups.setdefault(app_label, []).append(entry)
+
+        return render(request, 'stark/index.html', {'groups': groups})
+
     def get_urls(self):
 
-        urlpatterns = []
+        urlpatterns = [url(r'^$', self.index, name='index')]
         for item in self._registry:
             app_label = item.model._meta.app_label
             model_name = item.model._meta.model_name
