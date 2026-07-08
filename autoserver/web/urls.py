@@ -2,7 +2,9 @@ from django.conf.urls import url
 from web import views
 
 urlpatterns = [
+    url(r'^$', views.index, name='index'),
     url(r'^index/$', views.index, name='index'),
+
 
     # 主机
     # url(r'^server_list/$', views.server_list, name='server_list'),
