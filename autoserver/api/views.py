@@ -77,7 +77,10 @@ class Asset(AuthView):
             '192.168.8.131',
             '192.168.8.132',
         ]
-        return Response(host_list)
+        # 浏览器访问渲染文档页；客户端请求（带 ?raw=1 或非 HTML Accept）返回 JSON
+        if request.GET.get('raw') == '1' or 'text/html' not in request.META.get('HTTP_ACCEPT', ''):
+            return Response(host_list)
+        return render(request, 'api/asset_doc.html', {'host_list': host_list})
 
     def post(self, request):
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>/api/asset/ - 接口文档</title>
+{% load static %}
+<link rel="stylesheet" href="{% static 'plugins/bootstrap/css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'plugins/font-awesome/css/font-awesome.min.css' %}">
+<style>
+    body { background: #fafafa; padding: 24px 0; font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+    .container { max-width: 1000px; }
+    .endpoint-header { display: flex; align-items: center; margin-bottom: 20px; }
+    .method-badge {
+        display: inline-block; padding: 6px 14px; border-radius: 3px;
+        font-weight: 700; font-size: 14px; margin-right: 10px;
+        font-family: Consolas, Monaco, monospace;
+    }
+    .method-get { background: #61affe; color: #fff; border: 1px solid #4995e9; }
+    .method-post { background: #49cc90; color: #fff; border: 1px solid #36b06a; }
+    .path { font-family: Consolas, Monaco, monospace; font-size: 16px; color: #333; }
+    .desc { color: #888; font-size: 13px; margin-left: 12px; }
+    .section { background: #fff; border: 1px solid #e8e8e8; border-radius: 4px; padding: 16px 20px; margin-bottom: 16px; }
+    .section h3 { margin: 0 0 12px; font-size: 15px; color: #333; border-left: 3px solid #41b883; padding-left: 8px; }
+    .params-table { width: 100%; font-size: 13px; }
+    .params-table th { background: #f5f7fa; color: #666; font-weight: 600; padding: 8px 10px; text-align: left; border: 1px solid #eef0f3; }
+    .params-table td { padding: 8px 10px; border: 1px solid #eef0f3; vertical-align: top; }
+    .params-table .name { font-family: Consolas, Monaco, monospace; color: #c7254e; }
+    .params-table .type { color: #4995e9; font-size: 12px; }
+    .params-table .required { color: #f5222d; font-weight: 600; font-size: 12px; }
+    .params-table .optional { color: #999; font-size: 12px; }
+    pre {
+        background: #2d2d2d; color: #ccc; padding: 14px; border-radius: 4px;
+        font-size: 12px; line-height: 1.6; overflow-x: auto;
+        font-family: Consolas, Monaco, monospace;
+    }
+    pre .k { color: #f92672; }
+    pre .s { color: #e6db74; }
+    pre .n { color: #ae81ff; }
+    pre .c { color: #75715e; font-style: italic; }
+    .host-list {
+        background: #f0f7ff; border: 1px solid #d4e6fc; border-radius: 3px;
+        padding: 8px 12px; font-family: Consolas, Monaco, monospace; color: #1e7cd6;
+        display: inline-block; margin: 2px 6px 2px 0; font-size: 13px;
+    }
+    .auth-box { background: #fff7e6; border: 1px solid #ffd591; border-radius: 3px; padding: 10px 14px; font-size: 13px; color: #874d00; }
+    .auth-box code { background: #fff; padding: 1px 5px; border-radius: 2px; color: #c7254e; }
+    .footer { text-align: center; color: #bbb; font-size: 12px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="endpoint-header">
+        <span class="method-badge method-get">GET</span>
+        <span class="path">/api/asset/</span>
+        <span class="desc">获取待采集主机列表</span>
+    </div>
+
+    <div class="section">
+        <h3>说明</h3>
+        <p style="font-size: 13px; color: #666; margin: 0;">
+            客户端（SSH / Salt 模式）调用此接口获取需要采集资产信息的主机列表，
+            然后通过 <code>POST /api/asset/</code> 上报采集结果。
+        </p>
+        <div style="margin-top: 10px;">
+            <span style="font-size: 12px; color: #999;">当前返回：</span>
+            {% for h in host_list %}
+                <span class="host-list">{{ h }}</span>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: #999;">
+            客户端请求请加 <code>?raw=1</code> 或设置 <code>Accept: application/json</code> 获取纯 JSON。
+        </div>
+    </div>
+
+    <div class="endpoint-header" style="margin-top: 30px;">
+        <span class="method-badge method-post">POST</span>
+        <span class="path">/api/asset/</span>
+        <span class="desc">上报资产采集结果</span>
+    </div>
+
+    <div class="section">
+        <h3>鉴权</h3>
+        <div class="auth-box">
+            请求需带 query 参数：<code>key</code> 和 <code>ctime</code><br>
+            生成方式：<code>key = md5("alkdjwqm|" + ctime)</code>，<code>ctime</code> 为当前时间戳（秒）<br>
+            有效期 2 秒，且 key 不可复用（防重放）
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>请求头</h3>
+        <table class="params-table">
+            <tr><th>名称</th><th>值</th></tr>
+            <tr><td>Content-Type</td><td>application/json</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Body 参数（JSON）</h3>
+        <table class="params-table">
+            <tr>
+                <th>字段</th><th>类型</th><th>必填</th><th>说明</th>
+            </tr>
+            <tr>
+                <td class="name">action</td>
+                <td class="type">string</td>
+                <td class="required">是</td>
+                <td>操作类型：<code>create</code>（新主机首次上报）/ <code>update</code>（更新）/ <code>update_host</code>（主机名变更）</td>
+            </tr>
+            <tr>
+                <td class="name">basic</td>
+                <td class="type">object</td>
+                <td class="required">是</td>
+                <td>基本信息（主机名 / 系统 / SN / 制造商 / 型号 / CPU）</td>
+            </tr>
+            <tr>
+                <td class="name">main_board</td>
+                <td class="type">object</td>
+                <td class="optional">否</td>
+                <td>主板信息（SN / 制造商 / 型号）</td>
+            </tr>
+            <tr>
+                <td class="name">cpu</td>
+                <td class="type">object</td>
+                <td class="required">是</td>
+                <td>CPU 信息（物理颗数 / 逻辑颗数 / 型号）</td>
+            </tr>
+            <tr>
+                <td class="name">disk</td>
+                <td class="type">object</td>
+                <td class="optional">否</td>
+                <td>硬盘信息，key 为槽位（slot），value 为硬盘详情</td>
+            </tr>
+            <tr>
+                <td class="name">memory</td>
+                <td class="type">object</td>
+                <td class="optional">否</td>
+                <td>内存信息，key 为槽位（slot），value 为内存详情</td>
+            </tr>
+            <tr>
+                <td class="name">nic</td>
+                <td class="type">object</td>
+                <td class="optional">否</td>
+                <td>网卡信息，key 为网卡名（name），value 为网卡详情</td>
+            </tr>
+            <tr>
+                <td class="name">old_hostname</td>
+                <td class="type">string</td>
+                <td class="optional">否</td>
+                <td>仅 <code>action=update_host</code> 时需要，旧主机名</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>请求示例</h3>
+<pre><span class="c"># 客户端 Python 示例</span>
+<span class="k">import</span> requests, json, hashlib, time
+
+ctime = time.time()
+key = hashlib.md5(<span class="s">"alkdjwqm|{}"</span>.format(ctime).encode()).hexdigest()
+
+payload = {
+    <span class="s">"action"</span>: <span class="s">"create"</span>,
+    <span class="s">"basic"</span>: {<span class="s">"data"</span>: {<span class="s">"hostname"</span>: <span class="s">"web01"</span>, <span class="s">"os_platform"</span>: <span class="s">"linux"</span>, <span class="s">"os_version"</span>: <span class="s">"CentOS 7"</span>}},
+    <span class="s">"main_board"</span>: {<span class="s">"data"</span>: {<span class="s">"sn"</span>: <span class="s">"xxxxx"</span>, <span class="s">"manufacturer"</span>: <span class="s">"Dell"</span>, <span class="s">"model"</span>: <span class="s">"R730"</span>}},
+    <span class="s">"cpu"</span>: {<span class="s">"data"</span>: {<span class="s">"cpu_count"</span>: <span class="n">8</span>, <span class="s">"cpu_physical_count"</span>: <span class="n">1</span>, <span class="s">"cpu_model"</span>: <span class="s">"Intel Xeon"</span>}},
+    <span class="s">"disk"</span>: {<span class="s">"data"</span>: {
+        <span class="s">"0"</span>: {<span class="s">"slot"</span>: <span class="s">"0"</span>, <span class="s">"pd_type"</span>: <span class="s">"SAS"</span>, <span class="s">"capacity"</span>: <span class="n">279.396</span>, <span class="s">"model"</span>: <span class="s">"SEAGATE"</span>}
+    }},
+    <span class="s">"memory"</span>: {<span class="s">"data"</span>: {
+        <span class="s">"DIMM1"</span>: {<span class="s">"slot"</span>: <span class="s">"DIMM1"</span>, <span class="s">"capacity"</span>: <span class="n">8</span>, <span class="s">"manufacturer"</span>: <span class="s">"Samsung"</span>, <span class="s">"model"</span>: <span class="s">"DDR4"</span>, <span class="s">"sn"</span>: <span class="s">"xxx"</span>, <span class="s">"speed"</span>: <span class="s">"2400"</span>}
+    }},
+    <span class="s">"nic"</span>: {<span class="s">"data"</span>: {
+        <span class="s">"eth0"</span>: {<span class="s">"hwaddr"</span>: <span class="s">"aa:bb:cc:dd:ee:ff"</span>, <span class="s">"netmask"</span>: <span class="s">"255.255.255.0"</span>, <span class="s">"ipaddrs"</span>: <span class="s">"192.168.1.10"</span>, <span class="s">"up"</span>: <span class="n">True</span>}
+    }}
+}
+
+resp = requests.post(
+    <span class="s">"http://127.0.0.1:8001/api/asset/"</span>,
+    params={<span class="s">"key"</span>: key, <span class="s">"ctime"</span>: ctime},
+    data=json.dumps(payload),
+    headers={<span class="s">"Content-Type"</span>: <span class="s">"application/json"</span>}
+)
+<span class="k">print</span>(resp.json())</pre>
+    </div>
+
+    <div class="section">
+        <h3>响应示例</h3>
+<pre>{
+    <span class="s">"status"</span>: <span class="n">true</span>,
+    <span class="s">"hostname"</span>: <span class="s">"web01"</span>
+}</pre>
+    </div>
+
+    <div class="footer">
+        /api/asset/ · ITIL CMDB · 客户端上报接口
+    </div>
+</div>
+</body>
+</html>
